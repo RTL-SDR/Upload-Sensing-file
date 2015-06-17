@@ -78,7 +78,7 @@ public class StartStopActivity extends Activity
 		
 		// Select the correct query interval radio button based on the current setting in the application object
 		((RadioButton)findViewById(R.id.radio_10s)).setChecked(application.getQueryInterval()==10);
-		((RadioButton)findViewById(R.id.radio_30s)).setChecked(application.getQueryInterval()==30);
+		((RadioButton)findViewById(R.id.radio_30s)).setChecked(application.getQueryInterval()==40);
 		((RadioButton)findViewById(R.id.radio_1m)).setChecked(application.getQueryInterval()==60);
 		((RadioButton)findViewById(R.id.radio_2m)).setChecked(application.getQueryInterval()==120);
 		((RadioButton)findViewById(R.id.radio_5m)).setChecked(application.getQueryInterval()==300);

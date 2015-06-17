@@ -1,0 +1,5 @@
+package org.bfr.periodicquery.sdr;
+
+public class StartUploadingService {
+
+}

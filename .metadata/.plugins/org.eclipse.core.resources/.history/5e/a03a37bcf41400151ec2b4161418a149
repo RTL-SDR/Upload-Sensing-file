@@ -1,0 +1,24 @@
+package org.bfr.periodicquery.sdr;
+
+import android.app.Service;
+import android.content.Intent;
+import android.os.IBinder;
+
+public class StartUploadingService extends Service{
+	public StartUploadingService(){
+		
+	}
+	public void startUploading(){
+        Intent i = new Intent( getBaseContext() ,  org.bfr.periodicquery.sdr.UploadService.class);
+        i.putExtra("message" , "This message is from the Activity");
+        startService(i);
+	}
+	
+
+	@Override
+	public IBinder onBind(Intent intent) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+}

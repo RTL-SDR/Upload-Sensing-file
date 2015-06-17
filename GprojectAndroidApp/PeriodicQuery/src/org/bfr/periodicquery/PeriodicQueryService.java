@@ -17,7 +17,9 @@ package org.bfr.periodicquery;
 
 import org.bfr.periodicquery.PeriodicQueryApplication.LocationFuzzing;
 import org.bfr.periodicquery.PeriodicQueryApplication.SpectrumSource;
+import org.bfr.periodicquery.sdr.LocationService;
 import org.bfr.periodicquery.sdr.SdrSpectrumSensing;
+import org.bfr.periodicquery.sdr.UploadService;
 import org.bfr.querytools.google.GoogleSpectrumQuery;
 import org.bfr.querytools.logging.Logger;
 import org.bfr.querytools.msr.MsrSpectrumQuery;
@@ -113,6 +115,7 @@ public class PeriodicQueryService extends Service
 		super.onDestroy();
 	}
 
+
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId)
 	{
@@ -177,7 +180,38 @@ public class PeriodicQueryService extends Service
 		
 		public void spectrumSense()
 		{
-			SdrSpectrumSensing.sense();
+			Thread t1 = new Thread(){
+				public void run(){
+			    SdrSpectrumSensing.sense();
+				Intent iLoc = new Intent(getBaseContext(), LocationService.class);
+				startService(iLoc);
+				}
+			};
+
+			Thread t2 = new Thread(){
+				public void run(){
+				    //Start location services 
+
+//			try {
+//				sleep(5000); // To give location services some time
+//			} catch (InterruptedException e) {
+//
+//			}
+	        Intent i = new Intent(getBaseContext() ,  UploadService.class);
+	        i.putExtra("message" , "This message is from the Activity");
+	        startService(i);
+				}
+			};
+			
+			t1.start();
+			try {
+				t1.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			t2.start();
+			
+			
 		}
 		
 		@Override

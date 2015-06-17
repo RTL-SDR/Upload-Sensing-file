@@ -17,7 +17,6 @@ package org.bfr.periodicquery.sdr;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
-
 import android.util.Log;
 
 import com.stericson.RootTools.exceptions.RootDeniedException;
@@ -38,15 +37,16 @@ public class SdrSpectrumSensing
 
 	public static void sense()
 	{
-
+		Log.d("SpectrumQuery", "rtlsdr-query-start");
 		Log.d("SpectrumQuery", "rtlsdr-query-execute %.4f %.4f");
 		
 		try
 		{
-			rootShell = Shell.startNewRootShell(20000, 3);
+			rootShell = Shell.startNewRootShell(60000, 3);
 			
 			// Clear logcat buffer
-			command = new Command(1, "rtl_power -N -1 -i 0")
+			command = new Command(1,  "/data/local/tmp/rtl_power -f 740M:890M:1M -1   /sdcard/airband.txt" )
+		//	command = new Command(1, "rtl_power -N -1 -i 0")
 			{
 
 				@Override
@@ -85,7 +85,7 @@ public class SdrSpectrumSensing
 			e.printStackTrace();
 		} 
 		
-		Log.d("SpectrumQuery", "rtlsdr-query-done");
+		Log.d("SpectrumQuery", "rtlsdr-query-end");
 		
 	}
 	
