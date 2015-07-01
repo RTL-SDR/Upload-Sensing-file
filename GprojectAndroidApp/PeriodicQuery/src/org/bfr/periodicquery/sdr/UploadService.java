@@ -38,12 +38,9 @@ public class UploadService extends IntentService {
         }
         // Append to a file
         appendToFile(path , lu);
-
         //Uploading the file to the server
         Intent SIntent =  new Intent(this, UploadToServer.class);
         startService(SIntent);
-
-
     }
 
     private void appendToFile(String path,  LocationUnit lu)  {

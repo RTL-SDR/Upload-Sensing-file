@@ -37,6 +37,7 @@ public class LocationService extends Service  {
     public void onDestroy() {
         lt.stopIt();
         LocThread.interrupt();
+        LocThread.stop();
         super.onDestroy();
 
     }

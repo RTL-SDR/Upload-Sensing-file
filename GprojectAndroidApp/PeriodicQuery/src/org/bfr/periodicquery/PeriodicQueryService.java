@@ -180,38 +180,17 @@ public class PeriodicQueryService extends Service
 		
 		public void spectrumSense()
 		{
-			Thread t1 = new Thread(){
-				public void run(){
-			    SdrSpectrumSensing.sense();
-				Intent iLoc = new Intent(getBaseContext(), LocationService.class);
-				startService(iLoc);
-				}
-			};
-
-			Thread t2 = new Thread(){
-				public void run(){
-				    //Start location services 
-
-//			try {
-//				sleep(5000); // To give location services some time
-//			} catch (InterruptedException e) {
-//
-//			}
-	        Intent i = new Intent(getBaseContext() ,  UploadService.class);
-	        i.putExtra("message" , "This message is from the Activity");
-	        startService(i);
-				}
-			};
+			Intent iLoc = new Intent(getBaseContext(), LocationService.class);
+			startService(iLoc);
+			SdrSpectrumSensing.sense();
 			
-			t1.start();
 			try {
-				t1.join();
+				Thread.sleep(25000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			t2.start();
-			
-			
+			Intent iUp = new Intent(getBaseContext(), UploadService.class);
+			startService(iUp);
 		}
 		
 		@Override

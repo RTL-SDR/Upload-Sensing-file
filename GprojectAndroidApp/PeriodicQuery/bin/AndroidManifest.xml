@@ -51,9 +51,24 @@
         <receiver android:name="org.bfr.periodicquery.AlarmReceiver"/>
         <service android:name="org.bfr.periodicquery.PeriodicQueryService"/>
         
-        <service android:name="org.bfr.periodicquery.sdr.LocationService" />
-        <service android:name="org.bfr.periodicquery.sdr.UploadService" />
-        <service android:name="org.bfr.periodicquery.sdr.UploadToServer" />
+        <service android:name="org.bfr.periodicquery.sdr.LocationService" 
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="org.bfr.periodicquery.sdr.LocationService" />
+           </intent-filter>
+         </service>
+        <service android:name="org.bfr.periodicquery.sdr.UploadService" 
+            android:enabled="true"
+            android:exported="true">
+         <intent-filter>
+                <action android:name="org.bfr.periodicquery.sdr.uploadservice" />
+           </intent-filter>
+        </service>
+        <service android:name="org.bfr.periodicquery.sdr.UploadToServer"  
+            android:enabled="true"
+            android:exported="true"
+            />
         
         <meta-data
         android:name="com.google.android.gms.version"
