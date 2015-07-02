@@ -80,5 +80,18 @@ public class AlarmReceiver extends BroadcastReceiver
 		PendingIntent sender = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 		alarmManager.set(AlarmManager.RTC_WAKEUP, time, sender);
 	}
+	
+	public static void cancelScheduleWakeup(Context context)
+	{
+		// Get the AlarmManager service
+		AlarmManager alarmManager = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
+
+		// Create a wake-up event for the target time
+		Intent intent = new Intent(context, AlarmReceiver.class);
+		intent.setAction(WakeUpAction);
+
+		PendingIntent sender = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+		alarmManager.cancel(sender);
+	}
 
 }

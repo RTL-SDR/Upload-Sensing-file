@@ -8,7 +8,6 @@ INDEX VERSION 1.127+/Users/amjed/Desktop/GprojectApp/.metadata/.plugins/org.ecli
 1831474627.index
 4230992737.index
 3712507179.index
-484942860.index
 87198987.index
 3503266621.index
 2326659272.index

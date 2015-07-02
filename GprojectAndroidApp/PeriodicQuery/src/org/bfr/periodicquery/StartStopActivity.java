@@ -1,37 +1,41 @@
 /**
 	Copyright 2014 [BFR]
-	
+
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
 	You may obtain a copy of the License at
-	
+
 	    http://www.apache.org/licenses/LICENSE-2.0
-	
+
 	Unless required by applicable law or agreed to in writing, software
 	distributed under the License is distributed on an "AS IS" BASIS,
 	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 	See the License for the specific language governing permissions and
 	limitations under the License.
-**/
+ **/
 package org.bfr.periodicquery;
+
+import java.util.Calendar;
 
 import org.bfr.periodicquery.PeriodicQueryApplication.Location;
 import org.bfr.periodicquery.PeriodicQueryApplication.LocationFuzzing;
 import org.bfr.periodicquery.PeriodicQueryApplication.SpectrumSource;
+import org.bfr.periodicquery.sdr.LocationService;
+import org.bfr.periodicquery.sdr.UploadService;
 
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.view.View;
 import android.widget.Button;
 import android.widget.RadioButton;
-import android.widget.TextView;
-import android.widget.ToggleButton;
-
-
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -39,56 +43,43 @@ import android.media.AudioTrack;
 
 public class StartStopActivity extends Activity
 {
-	
-	// enable switch
-    ToggleButton btnEnable;
-    Button btnCheck;
-    TextView textInfo;
 
-    private Audio audio;
-	
-	
+	// enable switch
+	private Audio audio;
 
 	private PeriodicQueryService service = null;
-	
 	private PeriodicQueryApplication application;
-	
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_start_stop);
-		
-		// Start the service, if it is not already running.
-		Intent intent = new Intent(this, PeriodicQueryService.class);
-		startService(intent);
-		
+
 		// Get the application object
 		application = (PeriodicQueryApplication)getApplication();
-		
-		
+
 		// enable switch
-	        audio = new Audio();
-	        audio.waveform = Audio.SINE;
-	        audio.frequency = 15000.0;
-	        audio.level = 1.0;
-	        audio.mute = true;
-		
-		
+		audio = new Audio();
+		audio.waveform = Audio.SINE;
+		audio.frequency = 15000.0;
+		audio.level = 1.0;
+		audio.mute = true;
+
 	}
 
 	@Override
 	protected void onResume()
 	{
 		super.onResume();
-		
+
 		// Bind service
 		bindService(new Intent(this, PeriodicQueryService.class), serviceConnection, BIND_AUTO_CREATE);
 
 		// Reflect the status of the app in the ui (enable/disable buttons, select radio buttons, etc.)
 		updateUI();
 	}
-	
+
 	private void updateUI()
 	{
 		// Enable/disable start and stop buttons
@@ -97,7 +88,7 @@ public class StartStopActivity extends Activity
 			((Button)findViewById(R.id.button_start)).setEnabled(!service.isActive());
 			((Button)findViewById(R.id.button_stop)).setEnabled(service.isActive());
 		}
-		
+
 		// Select the correct service selection radio button based on the current setting in the application object
 		((RadioButton)findViewById(R.id.radio_google)).setChecked(
 				application.getSpectrumSource()==PeriodicQueryApplication.SpectrumSource.Google);
@@ -105,22 +96,22 @@ public class StartStopActivity extends Activity
 				application.getSpectrumSource()==PeriodicQueryApplication.SpectrumSource.Microsoft);
 		((RadioButton)findViewById(R.id.rtl_sdr)).setChecked(
 				application.getSpectrumSource()==PeriodicQueryApplication.SpectrumSource.RtlSdr);
-		
+
 		// Select the correct query interval radio button based on the current setting in the application object
 		((RadioButton)findViewById(R.id.radio_10s)).setChecked(application.getQueryInterval()==10);
 		((RadioButton)findViewById(R.id.radio_30s)).setChecked(application.getQueryInterval()==30);
 		((RadioButton)findViewById(R.id.radio_1m)).setChecked(application.getQueryInterval()==60);
 		((RadioButton)findViewById(R.id.radio_2m)).setChecked(application.getQueryInterval()==120);
 		((RadioButton)findViewById(R.id.radio_5m)).setChecked(application.getQueryInterval()==300);
-		
+
 		// Select the correct location radio button
 		((RadioButton)findViewById(R.id.radio_ny)).setChecked(application.getLocation()==Location.NewYork);
 		((RadioButton)findViewById(R.id.radio_ohio)).setChecked(application.getLocation()==Location.Ohio);
-		
+
 		// Select the correct location fuzzing radio button
 		((RadioButton)findViewById(R.id.radio_nofuzz)).setChecked(application.getLocationFuzzing()==LocationFuzzing.Off);
 		((RadioButton)findViewById(R.id.radio_fuzz1)).setChecked(application.getLocationFuzzing()==LocationFuzzing.UniformSquare);
-		
+
 	}
 
 	@Override
@@ -130,31 +121,72 @@ public class StartStopActivity extends Activity
 
 		unbindService(serviceConnection);
 	}
+	
+	
+	
+	//broadcast receiver for the upload service
+	
+	public void startService() {
+		Calendar cal = Calendar.getInstance();
+		cal.add(Calendar.SECOND, 5);
+		
+		Intent i = new Intent(this, UploadReceiver.class);
+		PendingIntent pi = PendingIntent.getBroadcast(this,0, i, PendingIntent.FLAG_CANCEL_CURRENT);
+		AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+		am.setRepeating(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), ( new PeriodicQueryApplication().getQueryInterval() - 2 ) ,  pi);
+	}
+	public void stopService() {
+		Intent i = new Intent(this, UploadReceiver.class);
+		PendingIntent pi = PendingIntent.getBroadcast(this,0, i, PendingIntent.FLAG_CANCEL_CURRENT);
+		AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+		am.cancel(pi);
+		
+		Intent intent = new Intent(this, UploadReceiver.class);
+		stopService(intent);
+	}
 
 	public void onStart(View view)
 	{
+		// Start the service, if it is not already running.
+		Intent intent = new Intent(this, PeriodicQueryService.class);
+		startService(intent);
+		
+		Intent iLoc = new Intent(getBaseContext(), LocationService.class);
+		startService(iLoc);
+		
+		startService();
+
 		
 		service.start();
-		
 		updateUI();
 		RadioButton rb =  (RadioButton)findViewById(R.id.rtl_sdr);
 		if ( rb.isChecked() ){
-        audio.start();
-        audio.mute = false;
+			audio.start();
+			audio.mute = false;
 		}
-		
 	}
 
 	public void onStop(View view)
 	{
-		
+
 		RadioButton rb =  (RadioButton)findViewById(R.id.rtl_sdr);
 		if ( rb.isChecked() ){
-			service.stop();
-			audio.stop();
-		}
-		
+			AlarmReceiver.cancelScheduleWakeup(this);
+			// stop the UploadService
+			stopService();
+			
+			Intent iLoc = new Intent(getBaseContext(), LocationService.class);
+			stopService(iLoc);
+			
 
+			audio.mute = true;
+			audio.stop();
+			
+			service.active = false;
+			service.stop();
+			Intent intent = new Intent(this, PeriodicQueryService.class);
+			stopService(intent);
+		}
 		updateUI();
 	}
 
@@ -165,7 +197,7 @@ public class StartStopActivity extends Activity
 	public void onServiceSelect(View view)
 	{
 		RadioButton radio = (RadioButton)view;
-		
+
 		SpectrumSource provider = SpectrumSource.valueOf(radio.getText().toString());
 		application.setSpectrumSource(provider);
 	}
@@ -178,13 +210,13 @@ public class StartStopActivity extends Activity
 	{
 		RadioButton radio = (RadioButton)view;
 		String text = radio.getText().toString();
-		
+
 		if ("10s".equals(text)) application.setQueryInterval(10);
 		if ("30s".equals(text)) application.setQueryInterval(30);
 		if ("1m".equals(text)) application.setQueryInterval(60);
 		if ("2m".equals(text)) application.setQueryInterval(120);
 		if ("5m".equals(text)) application.setQueryInterval(300);
-		
+
 	}
 
 	/**
@@ -215,12 +247,11 @@ public class StartStopActivity extends Activity
 
 	private ServiceConnection serviceConnection = new ServiceConnection()
 	{
-		
+
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder binder)
 		{
 			service = ((PeriodicQueryServiceBinder)binder).getService();
-			
 			updateUI();
 		}
 
@@ -229,164 +260,162 @@ public class StartStopActivity extends Activity
 		{
 			service = null;
 		}
-		
+
 	};
 
-	
-	
-	
-	
 
-    /**
-     * Audio class from `sig-gen` project. (GPLv3 license)
-     *
-     * url: https://github.com/billthefarmer/sig-gen
-     */
-    protected class Audio implements Runnable
-    {
-        protected static final int SINE = 0;
-        protected static final int SQUARE = 1;
-        protected static final int SAWTOOTH = 2;
 
-        protected int waveform;
-        protected boolean mute;
 
-        protected double frequency;
-        protected double level;
+	/**
+	 * Audio class from `sig-gen` project. (GPLv3 license)
+	 *
+	 * url: https://github.com/billthefarmer/sig-gen
+	 */
+	protected class Audio implements Runnable
+	{
+		protected static final int SINE = 0;
+		protected static final int SQUARE = 1;
+		protected static final int SAWTOOTH = 2;
 
-        protected Thread thread;
+		protected int waveform;
+		protected boolean mute;
 
-        private AudioTrack audioTrack;
+		protected double frequency;
+		protected double level;
 
-        protected Audio()
-        {
-            frequency = 440.0;
-            level = 16384;
-            mute = true;
-        }
+		protected Thread thread;
 
-        // Start
+		private AudioTrack audioTrack;
 
-        protected void start()
-        {
-            thread = new Thread(this, "Audio");
-            thread.start();
-        }
+		protected Audio()
+		{
+			frequency = 440.0;
+			level = 16384;
+			mute = true;
+		}
 
-        // Stop
+		// Start
 
-        protected void stop()
-        {
-            Thread t = thread;
-            thread = null;
+		protected void start()
+		{
+			thread = new Thread(this, "Audio");
+			thread.start();
+		}
 
-            // Wait for the thread to exit
+		// Stop
 
-            while (t != null && t.isAlive())
-                Thread.yield();
-        }
+		protected void stop()
+		{
+			Thread t = thread;
+			thread = null;
 
-        public void run()
-        {
-            processAudio();
-        }
+			// Wait for the thread to exit
 
-        // Process audio
+			while (t != null && t.isAlive())
+				Thread.yield();
+		}
 
-        protected void processAudio()
-        {
-            short buffer[];
+		public void run()
+		{
+			processAudio();
+		}
 
-            int rate =
-                    AudioTrack.getNativeOutputSampleRate(AudioManager.STREAM_MUSIC);
-            int minSize =
-                    AudioTrack.getMinBufferSize(rate, AudioFormat.CHANNEL_OUT_MONO,
-                            AudioFormat.ENCODING_PCM_16BIT);
+		// Process audio
 
-            // Find a suitable buffer size
+		protected void processAudio()
+		{
+			short buffer[];
 
-            int sizes[] = {1024, 2048, 4096, 8192, 16384, 32768};
-            int size = 0;
+			int rate =
+					AudioTrack.getNativeOutputSampleRate(AudioManager.STREAM_MUSIC);
+			int minSize =
+					AudioTrack.getMinBufferSize(rate, AudioFormat.CHANNEL_OUT_MONO,
+							AudioFormat.ENCODING_PCM_16BIT);
 
-            for (int s: sizes)
-            {
-                if (s > minSize)
-                {
-                    size = s;
-                    break;
-                }
-            }
+			// Find a suitable buffer size
 
-            final double K = 2.0 * Math.PI / rate;
+			int sizes[] = {1024, 2048, 4096, 8192, 16384, 32768};
+			int size = 0;
 
-            // Create the audio track
+			for (int s: sizes)
+			{
+				if (s > minSize)
+				{
+					size = s;
+					break;
+				}
+			}
 
-            audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, rate,
-                    AudioFormat.CHANNEL_OUT_MONO,
-                    AudioFormat.ENCODING_PCM_16BIT,
-                    size, AudioTrack.MODE_STREAM);
-            // Check audioTrack
+			final double K = 2.0 * Math.PI / rate;
 
-            if (audioTrack == null)
-                return;
+			// Create the audio track
 
-            // Check state
+			audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, rate,
+					AudioFormat.CHANNEL_OUT_MONO,
+					AudioFormat.ENCODING_PCM_16BIT,
+					size, AudioTrack.MODE_STREAM);
+			// Check audioTrack
 
-            int state = audioTrack.getState();
+			if (audioTrack == null)
+				return;
 
-            if (state != AudioTrack.STATE_INITIALIZED)
-            {
-                audioTrack.release();
-                return;
-            }
+			// Check state
 
-            audioTrack.play();
+			int state = audioTrack.getState();
 
-            // Create the buffer
+			if (state != AudioTrack.STATE_INITIALIZED)
+			{
+				audioTrack.release();
+				return;
+			}
 
-            buffer = new short[size];
+			audioTrack.play();
 
-            // Initialise the generator variables
+			// Create the buffer
 
-            double f = frequency;
-            double l = 0.0;
-            double q = 0.0;
+			buffer = new short[size];
 
-            while (thread != null)
-            {
-                // Fill the current buffer
+			// Initialise the generator variables
 
-                for (int i = 0; i < buffer.length; i++)
-                {
-                    f += (frequency - f) / 4096.0;
-                    l += ((mute? 0.0 : level) * 16384.0 - l) / 4096.0;
-                    q += (q < Math.PI)? f * K: (f * K) - (2.0 * Math.PI);
+			double f = frequency;
+			double l = 0.0;
+			double q = 0.0;
 
-                    switch (waveform)
-                    {
-                        case SINE:
-                            buffer[i] = (short) Math.round(Math.sin(q) * l);
-                            break;
+			while (thread != null)
+			{
+				// Fill the current buffer
 
-                        case SQUARE:
-                            buffer[i] = (short) ((q > 0.0)? l: -l);
-                            break;
+				for (int i = 0; i < buffer.length; i++)
+				{
+					f += (frequency - f) / 4096.0;
+					l += ((mute? 0.0 : level) * 16384.0 - l) / 4096.0;
+					q += (q < Math.PI)? f * K: (f * K) - (2.0 * Math.PI);
 
-                        case SAWTOOTH:
-                            buffer[i] = (short) Math.round((q / Math.PI) * l);
-                            break;
-                    }
-                }
+					switch (waveform)
+					{
+					case SINE:
+						buffer[i] = (short) Math.round(Math.sin(q) * l);
+						break;
 
-                audioTrack.write(buffer, 0, buffer.length);
-            }
+					case SQUARE:
+						buffer[i] = (short) ((q > 0.0)? l: -l);
+						break;
 
-            audioTrack.stop();
-            audioTrack.release();
-        }
-    }
-	
-	
-	
-	
+					case SAWTOOTH:
+						buffer[i] = (short) Math.round((q / Math.PI) * l);
+						break;
+					}
+				}
+
+				audioTrack.write(buffer, 0, buffer.length);
+			}
+
+			audioTrack.stop();
+			audioTrack.release();
+		}
+	}
+
+
+
+
 }

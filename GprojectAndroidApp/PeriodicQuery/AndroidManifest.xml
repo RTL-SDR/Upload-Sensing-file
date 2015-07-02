@@ -3,7 +3,7 @@
     package="org.bfr.periodicquery"
     android:versionCode="1"
     android:versionName="1.0" >
-
+	<uses-feature android:name="android.hardware.usb.host" />
     <uses-sdk
         android:minSdkVersion="16"
         android:targetSdkVersion="21" />
@@ -49,6 +49,7 @@
             </intent-filter>
         </activity>
         <receiver android:name="org.bfr.periodicquery.AlarmReceiver"/>
+        <receiver android:name="org.bfr.periodicquery.UploadReceiver"/>
         <service android:name="org.bfr.periodicquery.PeriodicQueryService"/>
         
         <service android:name="org.bfr.periodicquery.sdr.LocationService" 

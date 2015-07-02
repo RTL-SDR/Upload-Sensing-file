@@ -1,6 +1,6 @@
 package org.bfr.periodicquery.sdr;
 
-        import android.app.Service;
+import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
@@ -8,7 +8,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 
-        import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
@@ -17,27 +17,39 @@ import com.google.android.gms.location.LocationServices;
 import org.bfr.periodicquery.sdr.dataModel.LocationUnit;
 import org.bfr.periodicquery.sdr.db.*;
 
-public class LocationService extends Service  {
+public class LocationService extends Service  implements
+GoogleApiClient.ConnectionCallbacks,
+GoogleApiClient.OnConnectionFailedListener,
+LocationListener,
+Runnable  {
+	
+    public static final int LOCATION_REQUEST_INTERVAL = 1000;
+    public static final int FASTEST_LOCATION_INTERVAL = 100;
+    private GoogleApiClient gac;
+    private LocationRequest lr;
+    private Location location;
+    private LocationDataSource lDSource;
+	
     final Context context = this;
     Thread LocThread;
-    LocationTrack lt;
+
     @Override
     public void onCreate() {
     	Log.d("LocationService" , "location Service has been created");
         super.onCreate();
+        LocationTrack();
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId){
-        LocThread =  new Thread( lt = new LocationTrack(context));
+
         return super.onStartCommand(intent, flags, startId);
     }
 
     @Override
     public void onDestroy() {
-        lt.stopIt();
-        LocThread.interrupt();
-        LocThread.stop();
+        stopIt();
+    //    LocThread.interrupt();
         super.onDestroy();
 
     }
@@ -49,30 +61,14 @@ public class LocationService extends Service  {
 
 
 
-
-    // #______________Location Class_______________#
-    private class LocationTrack implements
-            GoogleApiClient.ConnectionCallbacks,
-            GoogleApiClient.OnConnectionFailedListener,
-            LocationListener,
-            Runnable{
-
-
-        public static final int LOCATION_REQUEST_INTERVAL = 300;
-        public static final int FASTEST_LOCATION_INTERVAL = 100;
-        private GoogleApiClient gac;
-        private LocationRequest lr;
-        private Location location;
-        private LocationDataSource lDSource;
-
         public void stopIt(){
             lDSource.close();
             LocationServices.FusedLocationApi.removeLocationUpdates(gac, this);
         }
 
-        public LocationTrack(Context context){
+        public void LocationTrack(){
 
-            gac = new GoogleApiClient.Builder(context)
+            gac = new GoogleApiClient.Builder(this)
                     .addApi(LocationServices.API)
                     .addConnectionCallbacks(this)
                     .addOnConnectionFailedListener(this)
@@ -83,7 +79,7 @@ public class LocationService extends Service  {
             //g
             createLocationRequestObject();
             //1
-            lDSource = new LocationDataSource(context);
+            lDSource = new LocationDataSource(this);
             lDSource.open();
 
         }
@@ -145,10 +141,10 @@ public class LocationService extends Service  {
 
         }
 
+		@Override
+		public void run() {
+			
+		}
 
-        @Override
-        public void run() {
-
-        }
     }
-}
+

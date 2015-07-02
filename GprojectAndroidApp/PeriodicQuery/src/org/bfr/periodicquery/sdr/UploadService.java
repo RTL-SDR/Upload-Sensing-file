@@ -29,6 +29,8 @@ public class UploadService extends IntentService {
         //TODO extract the last known location
         LocationDataSource lDSource =  new LocationDataSource(this);
         lDSource.open();
+        
+        
         LocationUnit lu = lDSource.findFirstRow();
 
         // If external storage is not available do nothing return

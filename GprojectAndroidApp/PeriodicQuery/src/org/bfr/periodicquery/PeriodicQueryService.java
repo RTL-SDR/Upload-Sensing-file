@@ -30,6 +30,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
@@ -91,7 +92,7 @@ public class PeriodicQueryService extends Service
 	{
 		if (!active)
 			return;
-
+		
 		// Signal that we're now deactivated
 		active = false;
 	}
@@ -180,17 +181,9 @@ public class PeriodicQueryService extends Service
 		
 		public void spectrumSense()
 		{
-			Intent iLoc = new Intent(getBaseContext(), LocationService.class);
-			startService(iLoc);
+
 			SdrSpectrumSensing.sense();
 			
-			try {
-				Thread.sleep(25000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			Intent iUp = new Intent(getBaseContext(), UploadService.class);
-			startService(iUp);
 		}
 		
 		@Override
